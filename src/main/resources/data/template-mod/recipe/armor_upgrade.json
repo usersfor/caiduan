@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:smithing_transform",
+  "template": { "item": "templatemod:armor_upgrade_template" },
+  "base": { "tag": "minecraft:chest_armors" },
+  "addition": { "item": "minecraft:netherite_ingot" },
+  "result": { "item": "minecraft:iron_chestplate" }
+}

@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:smithing_transform",
+  "template": { "item": "templatemod:sword_upgrade_template" },
+  "base": { "tag": "templatemod:swords" },
+  "addition": { "item": "minecraft:diamond" },
+  "result": { "item": "minecraft:iron_sword" }
+}

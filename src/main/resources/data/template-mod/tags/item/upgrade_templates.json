@@ -1,0 +1,7 @@
+{
+  "replace": false,
+  "values": [
+    "your_mod_id:sword_upgrade_template",
+    "other_mod:their_template"
+  ]
+}

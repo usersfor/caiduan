@@ -1,0 +1,13 @@
+{
+  "itemGroup.template-mod.forge": "Forge",
+  "container.template-mod.forging": "Forging Table",
+  "item.template-mod.glow_effect": "§d[ +10↑]",
+  "item.template-mod.sword_upgrade_template": "Sword Upgrade Template",
+  "item.template-mod.armor_upgrade_template": "Armor Upgrade Template",
+  "tooltip.template-mod.forge.level": "Forge Level: %d",
+  "tooltip.template-mod.forge.sword_bonus": "Attack Bonus: +%.1f",
+  "tooltip.template-mod.forge.armor_bonus": "Armor Bonus: +%.1f",
+  "tooltip.template-mod.forge.preview_damage": "Preview Attack Bonus: +%.1f",
+  "tooltip.template-mod.forge.preview_armor": "Preview Armor Bonus: +%.1f",
+  "tooltip.template-mod.forge.preview_chance": "Success Chance: %.1f%%"
+}

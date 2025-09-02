@@ -1,0 +1,13 @@
+{
+  "itemGroup.template-mod.forge": "锻造标签页",
+  "container.template-mod.forging": "锻造台",
+  "item.template-mod.glow_effect": "§d[ +10↑]",
+  "item.template-mod.sword_upgrade_template": "剑升级模板",
+  "item.template-mod.armor_upgrade_template": "盔甲升级模板",
+  "tooltip.template-mod.forge.level": "锻造等级：%d",
+  "tooltip.template-mod.forge.sword_bonus": "攻击加成：+%.1f",
+  "tooltip.template-mod.forge.armor_bonus": "护甲加成：+%.1f",
+  "tooltip.template-mod.forge.preview_damage": "预览攻击加成：+%.1f",
+  "tooltip.template-mod.forge.preview_armor": "预览护甲加成：+%.1f",
+  "tooltip.template-mod.forge.preview_chance": "成功率：%.1f%%"
+}
