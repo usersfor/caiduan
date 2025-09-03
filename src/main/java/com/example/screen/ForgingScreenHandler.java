@@ -182,6 +182,27 @@ public class ForgingScreenHandler extends ScreenHandler {
         return Math.min(base + bonus, 1.0F);
     }
 
+    /* ============================== 新的强化数值计算 ============================== */
+    private double getBonusMultiplier(int level) {
+        if (level <= 0) return 1.0; // 0级时，加成倍率为1.0（100%基础值）
+        if (level <= 9) return 1.0 + level * 0.01; // +1~+9 每级+1%（1.01, 1.02, ..., 1.09）
+
+        switch (level) {
+            case 10: return 1.15;  // +15%（总共115%）
+            case 11: return 1.25;  // +25%（总共125%）
+            case 12: return 1.39;  // +39%（总共139%）
+            case 13: return 1.55;  // +55%（总共155%）
+            case 14: return 1.74;  // +74%（总共174%）
+            case 15: return 1.96;  // +96%（总共196%）
+            case 16: return 2.21;  // +121%（总共221%）
+            case 17: return 2.49;  // +149%（总共249%）
+            case 18: return 2.80;  // +180%（总共280%）
+            case 19: return 3.14;  // +214%（总共314%）
+            case 20: return 3.51;  // +251%（总共351%）
+            default: // 20级以后，每级增加1%
+                return 3.51 + (level - 20) * 0.01;
+        }
+    }
     /* ============================== 预览 ============================== */
     private void updateResult() {
         ItemStack input = inv.getStack(SLOT_INPUT);
@@ -194,7 +215,7 @@ public class ForgingScreenHandler extends ScreenHandler {
             return;
         }
 
-        // 1. 复制物品，但只拷贝“匠魂需要”的字段，不整块覆盖
+        // 1. 复制物品，但只拷贝"匠魂需要"的字段，不整块覆盖
         ItemStack preview = input.copy();
         NbtCompound src = input.getOrCreateNbt();
         NbtCompound dst = preview.getOrCreateNbt();
@@ -206,17 +227,24 @@ public class ForgingScreenHandler extends ScreenHandler {
         dst.remove("PreviewArmor");
         dst.remove("PreviewChance");
 
-        int nextLevel = dst.getInt("forge_level") + 1;
+        int currentLevel = dst.getInt("forge_level");
+        int nextLevel = currentLevel + 1;
 
         if (isWeapon(preview)) {
-            double base  = ItemUtil.getTrueBaseDamage(preview);
-            double bonus = ItemUtil.getSwordBonus() * base * nextLevel;
-            dst.putDouble("PreviewDamage", bonus);
+            double base = ItemUtil.getTrueBaseDamage(preview);
+            double currentMultiplier = getBonusMultiplier(currentLevel);
+            double nextMultiplier = getBonusMultiplier(nextLevel);
+            // 计算下一级相比当前级增加的伤害值
+            double bonusIncrease = base * (nextMultiplier - currentMultiplier);
+            dst.putDouble("PreviewDamage", bonusIncrease);
         } else if (isArmor(preview)) {
             EquipmentSlot slot = getEquipmentSlot(preview);
-            double base  = ItemUtil.getCleanBaseArmor(preview, slot);
-            double bonus = ItemUtil.getArmorBonus() * base * nextLevel;
-            dst.putDouble("PreviewArmor", bonus);
+            double base = ItemUtil.getCleanBaseArmor(preview, slot);
+            double currentMultiplier = getBonusMultiplier(currentLevel);
+            double nextMultiplier = getBonusMultiplier(nextLevel);
+            // 计算下一级相比当前级增加的护甲值
+            double bonusIncrease = base * (nextMultiplier - currentMultiplier);
+            dst.putDouble("PreviewArmor", bonusIncrease);
         }
 
         dst.putFloat("PreviewChance", getCurrentChance(input, temp, mat1, mat2));
@@ -255,7 +283,6 @@ public class ForgingScreenHandler extends ScreenHandler {
         }
         updateResult();}
 
-
     /* 读取指定 UUID 的 AttributeModifier 值，不存在则返回 0 */
     private static double getExistingBonus(ItemStack stack,
                                            EntityAttribute attribute,
@@ -271,13 +298,16 @@ public class ForgingScreenHandler extends ScreenHandler {
         }
         return 0;
     }
+
     /* ============================== 属性加成 ============================== */
     private void applyForgingBonus(ItemStack stack) {
+        NbtCompound tag = stack.getOrCreateNbt();
+        int level = tag.getInt("forge_level");
+        double multiplier = getBonusMultiplier(level);
+
         if (isWeapon(stack)) {
-            double base  = ItemUtil.getTrueBaseDamage(stack);
-            double old   = getExistingBonus(stack, EntityAttributes.GENERIC_ATTACK_DAMAGE,
-                    SWORD_BONUS_UUID, EquipmentSlot.MAINHAND);
-            double bonus = old + ItemUtil.getSwordBonus() * base; // 累加
+            double base = ItemUtil.getTrueBaseDamage(stack);
+            double bonus = base * multiplier;
 
             removeSingleModifier(stack, EntityAttributes.GENERIC_ATTACK_DAMAGE,
                     SWORD_BONUS_UUID, EquipmentSlot.MAINHAND);
@@ -294,41 +324,35 @@ public class ForgingScreenHandler extends ScreenHandler {
 
             // 护甲
             double baseArmor = ItemUtil.getCleanBaseArmor(stack, slot);
-            double oldArmor  = getExistingBonus(stack, EntityAttributes.GENERIC_ARMOR,
-                    ARMOR_BONUS_UUID, slot);
-            double armorAdd  = oldArmor + ItemUtil.getArmorBonus() * baseArmor;
+            double armorBonus = baseArmor * multiplier;
             removeSingleModifier(stack, EntityAttributes.GENERIC_ARMOR,
                     ARMOR_BONUS_UUID, slot);
             stack.addAttributeModifier(
                     EntityAttributes.GENERIC_ARMOR,
                     new EntityAttributeModifier(ARMOR_BONUS_UUID, "forge_bonus",
-                            armorAdd, EntityAttributeModifier.Operation.ADDITION),
+                            armorBonus, EntityAttributeModifier.Operation.ADDITION),
                     slot);
 
             // 护甲韧性
             double baseTough = ItemUtil.getCleanBaseToughness(stack, slot);
-            double oldTough  = getExistingBonus(stack, EntityAttributes.GENERIC_ARMOR_TOUGHNESS,
-                    TOUGH_BONUS_UUID, slot);
-            double toughAdd  = oldTough + ItemUtil.getArmorBonus() * baseTough;
+            double toughBonus = baseTough * multiplier;
             removeSingleModifier(stack, EntityAttributes.GENERIC_ARMOR_TOUGHNESS,
                     TOUGH_BONUS_UUID, slot);
             stack.addAttributeModifier(
                     EntityAttributes.GENERIC_ARMOR_TOUGHNESS,
                     new EntityAttributeModifier(TOUGH_BONUS_UUID, "forge_bonus",
-                            toughAdd, EntityAttributeModifier.Operation.ADDITION),
+                            toughBonus, EntityAttributeModifier.Operation.ADDITION),
                     slot);
 
             // 抗击退
             double baseKbRes = ItemUtil.getCleanBaseKnockbackRes(stack, slot);
-            double oldKbRes  = getExistingBonus(stack, EntityAttributes.GENERIC_KNOCKBACK_RESISTANCE,
-                    KB_RES_BONUS_UUID, slot);
-            double kbResAdd  = oldKbRes + ItemUtil.getArmorBonus() * baseKbRes;
+            double kbResBonus = baseKbRes * multiplier;
             removeSingleModifier(stack, EntityAttributes.GENERIC_KNOCKBACK_RESISTANCE,
                     KB_RES_BONUS_UUID, slot);
             stack.addAttributeModifier(
                     EntityAttributes.GENERIC_KNOCKBACK_RESISTANCE,
                     new EntityAttributeModifier(KB_RES_BONUS_UUID, "forge_bonus",
-                            kbResAdd, EntityAttributeModifier.Operation.ADDITION),
+                            kbResBonus, EntityAttributeModifier.Operation.ADDITION),
                     slot);
         }
     }
