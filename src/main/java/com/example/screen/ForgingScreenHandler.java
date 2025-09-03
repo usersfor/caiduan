@@ -40,6 +40,20 @@ public class ForgingScreenHandler extends ScreenHandler {
     private static final UUID TOUGH_BONUS_UUID  = UUID.fromString("5b8f7c3d-7b3d-4c66-a3b4-4f4f8c0e8a5b");
     private static final UUID KB_RES_BONUS_UUID = UUID.fromString("7f3e3a10-5f3d-4c66-a3b4-4f4f8c0e8a5b");
 
+    // 材料基础加成和衰减率
+    private static final float PROTECTION_STONE_BASE = 0.04F;
+    private static final float PROTECTION_STONE_DECAY = 0.04F;
+    private static final float DIAMOND_BASE = 0.01F;
+    private static final float DIAMOND_DECAY = 0.1F;
+    private static final float NAUTILUS_SHELL_BASE = 0.015F;
+    private static final float NAUTILUS_SHELL_DECAY = 0.09F;
+    private static final float NETHERITE_INGOT_BASE = 0.02F;
+    private static final float NETHERITE_INGOT_DECAY = 0.07F;
+    private static final float NETHER_STAR_BASE = 0.025F;
+    private static final float NETHER_STAR_DECAY = 0.06F;
+    private static final float DRAGON_EGG_BASE = 0.03F;
+    private static final float DRAGON_EGG_DECAY = 0.05F;
+
     /* ---------- 工具 ---------- */
     public  static EquipmentSlot getEquipmentSlot(ItemStack stack) {
         Item item = stack.getItem();
@@ -101,12 +115,18 @@ public class ForgingScreenHandler extends ScreenHandler {
         });
         addSlot(new Slot(inv, SLOT_ADD_MAT1, 75, 17) {
             @Override public boolean canInsert(ItemStack stack) {
-                return stack.isOf(Items.DIAMOND);
+                // 保护石槽位
+                return stack.isOf(ModItems.PROTECTION_STONE);
             }
         });
         addSlot(new Slot(inv, SLOT_ADD_MAT2, 93, 17) {
             @Override public boolean canInsert(ItemStack stack) {
-                return stack.isOf(Items.NETHERITE_INGOT);
+                // 多种材料槽位：钻石、海洋之星、下界合金锭、下界之星、龙蛋
+                return stack.isOf(Items.DIAMOND) ||
+                        stack.isOf(Items.NAUTILUS_SHELL) ||
+                        stack.isOf(Items.NETHERITE_INGOT) ||
+                        stack.isOf(Items.NETHER_STAR) ||
+                        stack.isOf(Items.DRAGON_EGG);
             }
         });
         addSlot(new Slot(inv, SLOT_RESULT, 151, 35) {
@@ -160,26 +180,15 @@ public class ForgingScreenHandler extends ScreenHandler {
         return 0.001F;
     }
 
-    private float getCurrentChance(ItemStack weapon,
-                                   ItemStack template,
-                                   ItemStack mat1,
-                                   ItemStack mat2) {
-        int level = weapon.getOrCreateNbt().getInt("forge_level");
-        if (level >= 99) return 0.0F;
-        float base = getBaseChance(level);
+    // 将方法移到类主体中作为独立方法
+    private float calculateMaterialBonus(int count, float baseBonus, float decayRate) {
+        if (count <= 0) return 0;
 
-        int templateCount = template.isEmpty() ? 0 : template.getCount();
-        int netherite = 0, diamond = 0;
-        for (ItemStack s : new ItemStack[]{mat1, mat2}) {
-            if (!s.isEmpty()) {
-                if (s.isOf(Items.NETHERITE_INGOT)) netherite += s.getCount();
-                if (s.isOf(Items.DIAMOND))         diamond  += s.getCount();
-            }
+        float totalBonus = 0;
+        for (int i = 1; i <= count; i++) {
+            totalBonus += baseBonus * (1.0F - (i - 1) * decayRate);
         }
-        float bonus = templateCount * 0.03F
-                + netherite * 0.02F
-                + diamond   * 0.01F;
-        return Math.min(base + bonus, 1.0F);
+        return totalBonus;
     }
 
     /* ============================== 新的强化数值计算 ============================== */
@@ -210,10 +219,13 @@ public class ForgingScreenHandler extends ScreenHandler {
         ItemStack mat2  = inv.getStack(SLOT_ADD_MAT2);
         ItemStack temp  = inv.getStack(SLOT_TEMPLATE);
 
-        if (input.isEmpty() || mat1.isEmpty() || mat2.isEmpty()) {
+        if (input.isEmpty() || mat2.isEmpty()) {
             inv.setStack(SLOT_RESULT, ItemStack.EMPTY);
             return;
         }
+
+        // 使用新方法获取材料数量
+        MaterialCounts counts = calculateMaterialCounts(temp, mat1, mat2);
 
         // 1. 复制物品，但只拷贝"匠魂需要"的字段，不整块覆盖
         ItemStack preview = input.copy();
@@ -247,26 +259,39 @@ public class ForgingScreenHandler extends ScreenHandler {
             dst.putDouble("PreviewArmor", bonusIncrease);
         }
 
-        dst.putFloat("PreviewChance", getCurrentChance(input, temp, mat1, mat2));
+        dst.putFloat("PreviewChance", getCurrentChance(input, counts.templateCount, counts.protectionStone, counts.material2Type, counts.material2Count));
         inv.setStack(SLOT_RESULT, preview);
     }
 
     /* ============================== 强化逻辑 ============================== */
     private void onCraft(PlayerEntity player) {
         ItemStack input = inv.getStack(SLOT_INPUT);
-        ItemStack mat1  = inv.getStack(SLOT_ADD_MAT1);
-        ItemStack mat2  = inv.getStack(SLOT_ADD_MAT2);
-        ItemStack temp  = inv.getStack(SLOT_TEMPLATE);
+        ItemStack mat1 = inv.getStack(SLOT_ADD_MAT1);
+        ItemStack mat2 = inv.getStack(SLOT_ADD_MAT2);
+        ItemStack temp = inv.getStack(SLOT_TEMPLATE);
 
-        if (input.isEmpty() || mat1.isEmpty() || mat2.isEmpty()) return;
+        if (input.isEmpty() || mat2.isEmpty()) return;
 
-        inv.removeStack(SLOT_ADD_MAT1, 1);
-        inv.removeStack(SLOT_ADD_MAT2, 1);
-        if (!temp.isEmpty()) inv.removeStack(SLOT_TEMPLATE, 1);
+        // 使用新方法获取材料数量
+        MaterialCounts counts = calculateMaterialCounts(temp, mat1, mat2);
 
-        float chance = getCurrentChance(input, temp, mat1, mat2);
+        // 消耗材料
+        if (counts.protectionStone > 0) {
+            consumeMaterialFromSlots(counts.protectionStone, ModItems.PROTECTION_STONE);
+        }
+
+        if (counts.material2Count > 0) {
+            consumeMaterialFromSlots(counts.material2Count, counts.material2Type);
+        }
+
+        if (counts.templateCount > 0) {
+            inv.removeStack(SLOT_TEMPLATE, counts.templateCount);
+        }
+
+        float chance = getCurrentChance(input, counts.templateCount, counts.protectionStone, counts.material2Type, counts.material2Count);
         boolean success = player.getRandom().nextFloat() < chance;
 
+        // 其余失败处理逻辑保持不变...
         if (success) {
             NbtCompound tag = input.getOrCreateNbt();
             int newLevel = tag.getInt("forge_level") + 1;
@@ -278,25 +303,132 @@ public class ForgingScreenHandler extends ScreenHandler {
             applyForgingBonus(input);   // 只追加 AttributeModifier
             player.sendMessage(Text.literal("强化成功！当前等级: " + newLevel), false);
         } else {
-            inv.setStack(SLOT_INPUT, ItemStack.EMPTY);
-            player.sendMessage(Text.literal("强化失败！"), false);
-        }
-        updateResult();}
+            NbtCompound tag = input.getOrCreateNbt();
+            int currentLevel = tag.getInt("forge_level");
 
-    /* 读取指定 UUID 的 AttributeModifier 值，不存在则返回 0 */
-    private static double getExistingBonus(ItemStack stack,
-                                           EntityAttribute attribute,
-                                           UUID uuid,
-                                           EquipmentSlot slot) {
-        var modifiers = stack.getAttributeModifiers(slot).get(attribute);
-        if (modifiers != null) {
-            for (var mod : modifiers) {
-                if (mod.getId().equals(uuid)) {
-                    return mod.getValue();
-                }
+            // 根据当前等级决定失败惩罚
+            if (currentLevel >= 15) {
+                // +15 以上失败直接清除武器
+                inv.setStack(SLOT_INPUT, ItemStack.EMPTY);
+                player.sendMessage(Text.literal("强化失败！武器已损毁！"), false);
+            } else if (currentLevel >= 12) {
+                // +12 开始失败不掉落但掉 3 级
+                int newLevel = Math.max(0, currentLevel - 3); // 确保等级不低于0
+                tag.putInt("forge_level", newLevel);
+
+                // 重新应用属性修饰符以反映等级下降
+                applyForgingBonus(input);
+                player.sendMessage(Text.literal("强化失败！武器等级下降了3级！当前等级: " + newLevel), false);
+
+                // 更新物品栈以触发客户端同步
+                inv.setStack(SLOT_INPUT, input);
+            } else {
+                // 12级以下失败清除武器（原逻辑）
+                inv.setStack(SLOT_INPUT, ItemStack.EMPTY);
+                player.sendMessage(Text.literal("强化失败！"), false);
             }
         }
-        return 0;
+        updateResult();
+    }
+
+    // 修改后的材料计数类
+    private static class MaterialCounts {
+        public final int templateCount;
+        public final int protectionStone;
+        public final Item material2Type;
+        public final int material2Count;
+
+        public MaterialCounts(int templateCount, int protectionStone, Item material2Type, int material2Count) {
+            this.templateCount = templateCount;
+            this.protectionStone = protectionStone;
+            this.material2Type = material2Type;
+            this.material2Count = material2Count;
+        }
+    }
+
+    // 修改后的计算材料数量的方法
+    private MaterialCounts calculateMaterialCounts(ItemStack template, ItemStack mat1, ItemStack mat2) {
+        final int MAX_MATERIALS = 10;
+
+        int templateCount = Math.min(template.isEmpty() ? 0 : template.getCount(), MAX_MATERIALS);
+        int protectionStone = 0;
+        Item material2Type = null;
+        int material2Count = 0;
+
+        // 处理保护石
+        if (!mat1.isEmpty() && mat1.isOf(ModItems.PROTECTION_STONE)) {
+            protectionStone = Math.min(mat1.getCount(), MAX_MATERIALS);
+        }
+
+        // 处理第二个材料槽
+        if (!mat2.isEmpty()) {
+            if (mat2.isOf(Items.DIAMOND) ||
+                    mat2.isOf(Items.NAUTILUS_SHELL) ||
+                    mat2.isOf(Items.NETHERITE_INGOT) ||
+                    mat2.isOf(Items.NETHER_STAR) ||
+                    mat2.isOf(Items.DRAGON_EGG)) {
+                material2Type = mat2.getItem();
+                material2Count = Math.min(mat2.getCount(), MAX_MATERIALS);
+            }
+        }
+
+        return new MaterialCounts(templateCount, protectionStone, material2Type, material2Count);
+    }
+
+    // 修改后的getCurrentChance方法
+    private float getCurrentChance(ItemStack weapon, int templateCount, int protectionStone, Item material2Type, int material2Count) {
+        int level = weapon.getOrCreateNbt().getInt("forge_level");
+        if (level >= 99) return 0.0F;
+        float base = getBaseChance(level);
+
+        // 模板加成
+        float templateBonus = calculateMaterialBonus(templateCount, 0.03F, 0.05F);
+
+        // 保护石加成（只有当保护石存在时）
+        float protectionStoneBonus = 0.0F;
+        if (protectionStone > 0) {
+            protectionStoneBonus = calculateMaterialBonus(protectionStone, PROTECTION_STONE_BASE, PROTECTION_STONE_DECAY);
+        }
+
+        // 第二个材料槽加成（根据材料类型）
+        float material2Bonus = 0.0F;
+        if (material2Type != null) {
+            if (material2Type == Items.DIAMOND) {
+                material2Bonus = calculateMaterialBonus(material2Count, DIAMOND_BASE, DIAMOND_DECAY);
+            } else if (material2Type == Items.NAUTILUS_SHELL) {
+                material2Bonus = calculateMaterialBonus(material2Count, NAUTILUS_SHELL_BASE, NAUTILUS_SHELL_DECAY);
+            } else if (material2Type == Items.NETHERITE_INGOT) {
+                material2Bonus = calculateMaterialBonus(material2Count, NETHERITE_INGOT_BASE, NETHERITE_INGOT_DECAY);
+            } else if (material2Type == Items.NETHER_STAR) {
+                material2Bonus = calculateMaterialBonus(material2Count, NETHER_STAR_BASE, NETHER_STAR_DECAY);
+            } else if (material2Type == Items.DRAGON_EGG) {
+                material2Bonus = calculateMaterialBonus(material2Count, DRAGON_EGG_BASE, DRAGON_EGG_DECAY);
+            }
+        }
+
+        return base + templateBonus + protectionStoneBonus + material2Bonus;
+    }
+
+    // 从两个材料槽中消耗指定数量的材料
+    private void consumeMaterialFromSlots(int amountToConsume, Item item) {
+        int remaining = amountToConsume;
+
+        // 先尝试从第一个材料槽消耗
+        ItemStack slot1 = inv.getStack(SLOT_ADD_MAT1);
+        if (!slot1.isEmpty() && slot1.isOf(item)) {
+            int consumeFromSlot1 = Math.min(remaining, slot1.getCount());
+            inv.removeStack(SLOT_ADD_MAT1, consumeFromSlot1);
+            remaining -= consumeFromSlot1;
+        }
+
+        // 如果还需要更多，从第二个材料槽消耗
+        if (remaining > 0) {
+            ItemStack slot2 = inv.getStack(SLOT_ADD_MAT2);
+            if (!slot2.isEmpty() && slot2.isOf(item)) {
+                int consumeFromSlot2 = Math.min(remaining, slot2.getCount());
+                inv.removeStack(SLOT_ADD_MAT2, consumeFromSlot2);
+            }
+        }
     }
 
     /* ============================== 属性加成 ============================== */
@@ -414,10 +546,14 @@ public class ForgingScreenHandler extends ScreenHandler {
             } else if (stack.isOf(ModItems.SWORD_UPGRADE_TEMPLATE)) {
                 if (!insertItem(stack, SLOT_TEMPLATE, SLOT_TEMPLATE + 1, false))
                     return ItemStack.EMPTY;
-            } else if (stack.isOf(Items.DIAMOND)) {
+            } else if (stack.isOf(ModItems.PROTECTION_STONE)) {
                 if (!insertItem(stack, SLOT_ADD_MAT1, SLOT_ADD_MAT1 + 1, false))
                     return ItemStack.EMPTY;
-            } else if (stack.isOf(Items.NETHERITE_INGOT)) {
+            } else if (stack.isOf(Items.DIAMOND) ||
+                    stack.isOf(Items.NAUTILUS_SHELL) ||
+                    stack.isOf(Items.NETHERITE_INGOT) ||
+                    stack.isOf(Items.NETHER_STAR) ||
+                    stack.isOf(Items.DRAGON_EGG)) {
                 if (!insertItem(stack, SLOT_ADD_MAT2, SLOT_ADD_MAT2 + 1, false))
                     return ItemStack.EMPTY;
             } else return ItemStack.EMPTY;
