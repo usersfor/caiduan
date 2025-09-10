@@ -9,6 +9,9 @@ import net.minecraft.registry.Registry;
 import net.minecraft.screen.ScreenHandlerContext;
 import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.util.Identifier;
+import com.example.util.PrefixEffectHandler;
+
+
 
 public class TemplateMod implements ModInitializer {
 	public static final String MOD_ID = "template-mod";
@@ -24,9 +27,11 @@ public class TemplateMod implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		com.example.registry.ModBlocks.register();
-
 		com.example.item.ModItems.register();
-		ClientForgeEvents.init();
-		com.example.item.ModTabs.register();   // ← 加上这一行
+		com.example.item.ModTabs.register();   // 注册创造模式物品栏标签
+
+		PrefixEffectHandler.initialize(); // 注册前缀效果处理器
+
+		ClientForgeEvents.init(); // 注册锻造效果
 	}
 }

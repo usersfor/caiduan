@@ -1,13 +1,27 @@
 {
-  "itemGroup.template-mod.forge": "锻造标签页",
-  "container.template-mod.forging": "锻造台",
-  "item.template-mod.glow_effect": "§d[ +10↑]",
-  "item.template-mod.sword_upgrade_template": "剑升级模板",
-  "item.template-mod.armor_upgrade_template": "盔甲升级模板",
-  "tooltip.template-mod.forge.level": "锻造等级：%d",
-  "tooltip.template-mod.forge.sword_bonus": "攻击加成：+%.1f",
-  "tooltip.template-mod.forge.armor_bonus": "护甲加成：+%.1f",
-  "tooltip.template-mod.forge.preview_damage": "预览攻击加成：+%.1f",
-  "tooltip.template-mod.forge.preview_armor": "预览护甲加成：+%.1f",
-  "tooltip.template-mod.forge.preview_chance": "成功率：%.1f%%"
+  "itemGroup.template_mod.forge": "锻造",
+  "container.template_mod.forging": "锻造台",
+  "item.template_mod.glow_effect": "§d[ +10↑]",
+  "item.template_mod.sword_upgrade_template": "剑升级模板",
+  "item.template_mod.armor_upgrade_template": "护甲升级模板",
+  "tooltip.template_mod.forge.level": "锻造等级: %d",
+  "tooltip.template_mod.forge.sword_bonus": "攻击加成: +%.1f",
+  "tooltip.template_mod.forge.armor_bonus": "护甲加成: +%.1f",
+  "tooltip.template_mod.forge.preview_damage": "预览攻击加成: +%.1f",
+  "tooltip.template_mod.forge.preview_armor": "预览护甲加成: +%.1f",
+  "tooltip.template_mod.forge.preview_chance": "成功几率: %.1f%%",
+
+
+  "item.template_mod.can_guang_qiang_hua_shi": "灿光强化石",
+  "item.template_mod.cui_huo_sui_jing": "淬火碎晶",
+  "item.template_mod.cang_yue_hui_shi": "苍月辉石",
+  "item.template_mod.xing_chen_duan_pian": "星辰断片",
+  "item.template_mod.long_yan_jie_jing": "龙眼结晶体",
+  "item.template_mod.shi_zhi_mo_he": "噬之魔核",
+  "item.template_mod.ming_yuan_po_jie_shi": "命缘破解石",
+  "item.template_mod.tian_zhao_huang_xing_zuan": "天兆黄星钻",
+  "item.template_mod.zhong_yan_hun_dun_yuan_huo": "重岩混沌源火",
+  "item.template_mod.shi_shi_yong_heng_chao_xin_xing": "实世永恒超新星",
+  "item.template_mod.he_er_de_de_shi_kong_sui_ying": "赫尔德的时空碎影",
+  "item.template_mod.ka_en_de_hui_mie_yu_jin": "卡恩的毁灭鎏金"
 }

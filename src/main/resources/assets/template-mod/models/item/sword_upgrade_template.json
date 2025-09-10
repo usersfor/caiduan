@@ -1,4 +1,0 @@
-{
-  "parent": "item/generated",
-  "textures": { "layer0": "template-mod:item/sword_upgrade_template" }
-}
