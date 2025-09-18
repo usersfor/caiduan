@@ -1,27 +1,13 @@
 {
-  "itemGroup.template_mod.forge": "Forge",
-  "container.template_mod.forging": "Forging Table",
-  "item.template_mod.glow_effect": "§d[ +10↑]",
-  "item.template_mod.sword_upgrade_template": "Sword Upgrade Template",
-  "item.template_mod.armor_upgrade_template": "Armor Upgrade Template",
-  "tooltip.template_mod.forge.level": "Forge Level: %d",
-  "tooltip.template_mod.forge.sword_bonus": "Attack Bonus: +%.1f",
-  "tooltip.template_mod.forge.armor_bonus": "Armor Bonus: +%.1f",
-  "tooltip.template_mod.forge.preview_damage": "Preview Attack Bonus: +%.1f",
-  "tooltip.template_mod.forge.preview_armor": "Preview Armor Bonus: +%.1f",
-  "tooltip.template_mod.forge.preview_chance": "Success Chance: %.1f%%",
-
-
-  "item.template_mod.can_guang_qiang_hua_shi": "Brilliance Strengthening Stone",
-  "item.template_mod.cui_huo_sui_jing": "Blaze Crystal Shard",
-  "item.template_mod.cang_yue_hui_shi": "Pale Moon Grey Stone",
-  "item.template_mod.xing_chen_duan_pian": "Star Fragment",
-  "item.template_mod.long_yan_jie_jing": "Dragon Eye Crystal",
-  "item.template_mod.shi_zhi_mo_he": "Demon Core of Greed",
-  "item.template_mod.ming_yuan_po_jie_shi": "Destiny Breaker",
-  "item.template_mod.tian_zhao_huang_xing_zuan": "Heaven Shining Yellow Diamond",
-  "item.template_mod.zhong_yan_hun_dun_yuan_huo": "Primordial Chaos Flame of Heavy Rock",
-  "item.template_mod.shi_shi_yong_heng_chao_xin_xing": "Eternal Hyperstar of Reality",
-  "item.template_mod.he_er_de_de_shi_kong_sui_ying": "Herder's Space-Time Fragment",
-  "item.template_mod.ka_en_de_hui_mie_yu_jin": "Kaen's Destruction Feather Metal"
+  "itemGroup.template-mod.forge": "Forge",
+  "container.template-mod.forging": "Forging Table",
+  "item.template-mod.glow_effect": "§d[ +10↑]",
+  "item.template-mod.sword_upgrade_template": "Sword Upgrade Template",
+  "item.template-mod.armor_upgrade_template": "Armor Upgrade Template",
+  "tooltip.template-mod.forge.level": "Forge Level: %d",
+  "tooltip.template-mod.forge.sword_bonus": "Attack Bonus: +%.1f",
+  "tooltip.template-mod.forge.armor_bonus": "Armor Bonus: +%.1f",
+  "tooltip.template-mod.forge.preview_damage": "Preview Attack Bonus: +%.1f",
+  "tooltip.template-mod.forge.preview_armor": "Preview Armor Bonus: +%.1f",
+  "tooltip.template-mod.forge.preview_chance": "Success Chance: %.1f%%"
 }
