@@ -1,0 +1,4 @@
+{
+  "parent": "item/generated",
+  "textures": { "layer0": "template-mod:item/armor_upgrade_template" }
+}

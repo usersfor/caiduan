@@ -1,0 +1,5 @@
+{
+  "parent": "item/generated",
+  "textures": { "layer0": "template-mod:item/can_guang_qiang_hua_shi",
+    "layer1": "template-mod:item/dongtai1" }
+}

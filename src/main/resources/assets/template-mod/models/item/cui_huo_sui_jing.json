@@ -1,0 +1,5 @@
+{
+  "parent": "item/generated",
+  "textures": { "layer0": "template-mod:item/cui_huo_sui_jing",
+    "layer1": "template-mod:item/dongtai1"   }
+}

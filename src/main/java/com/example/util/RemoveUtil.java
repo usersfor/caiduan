@@ -17,16 +17,14 @@ import net.minecraft.util.Identifier;
 
 import java.util.UUID;
 
-public final class ItemUtil {
+public final class RemoveUtil {
 
-    /* ===== 每级固定加成比例 ===== */
-    public static double getSwordBonus()  { return 0.20; }
-    public static double getArmorBonus()  { return 0.20; }
+
 
     /* ================================================================
        对外暴露：读取“干净”的基础值（无强化 modifier）
        ================================================================ */
-    public static double getCleanBaseArmor(ItemStack stack, EquipmentSlot slot) {
+    public static double getCleanBaseArmor(ItemStack stack) {
         if (stack.isOf(Items.SHIELD)) return 0;
         double tinker = getTinkerDouble(stack, "tconstruct:armor");
         if (tinker > 0) return tinker;
@@ -34,7 +32,7 @@ public final class ItemUtil {
         return 0;
     }
 
-    public static double getCleanBaseToughness(ItemStack stack, EquipmentSlot slot) {
+    public static double getCleanBaseToughness(ItemStack stack ) {
         if (stack.isOf(Items.SHIELD)) return 0;
         double tinker = getTinkerDouble(stack, "tconstruct:armor_toughness");
         if (tinker > 0) return tinker;
@@ -42,7 +40,7 @@ public final class ItemUtil {
         return 0;
     }
 
-    public static double getCleanBaseKnockbackRes(ItemStack stack, EquipmentSlot slot) {
+    public static double getCleanBaseKnockbackRes(ItemStack stack) {
         if (stack.isOf(Items.SHIELD)) return 0;
         double tinker = getTinkerDouble(stack, "tconstruct:knockback_resistance");
         if (tinker > 0) return tinker;
@@ -83,9 +81,9 @@ public final class ItemUtil {
         } else if (isArmor(stack)) {
             EquipmentSlot slot = getEquipmentSlot(stack);
             if (slot == null) return;
-            nbt.putDouble("base_armor",         getCleanBaseArmor(stack, slot));
-            nbt.putDouble("base_toughness",     getCleanBaseToughness(stack, slot));
-            nbt.putDouble("base_knockback_res", getCleanBaseKnockbackRes(stack, slot));
+            nbt.putDouble("base_armor",         getCleanBaseArmor(stack));
+            nbt.putDouble("base_toughness",     getCleanBaseToughness(stack));
+            nbt.putDouble("base_knockback_res", getCleanBaseKnockbackRes(stack));
         }
     }
 
@@ -142,5 +140,5 @@ public final class ItemUtil {
     }
 
     /* 防止实例化 */
-    private ItemUtil() {}
+    private RemoveUtil() {}
 }
