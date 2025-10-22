@@ -17,10 +17,10 @@ public class ClientForgeEvents {
             NbtCompound nbt = stack.getNbt();
             if (nbt == null) return;
 
-            // 调试输出：物品名称和NBT内容
-            System.out.println("=== 物品工具提示调试 ===");
-            System.out.println("物品: " + stack.getName().getString());
-            System.out.println("NBT: " + nbt.toString());
+//            调试输出：物品名称和NBT内容
+//            System.out.println("=== 物品工具提示调试 ===");
+//            System.out.println("物品: " + stack.getName().getString());
+//            System.out.println("NBT: " + nbt.toString());
 
             /* ---------- 预览 ---------- */
             if (nbt.contains("PreviewDamage")) {
@@ -119,7 +119,7 @@ public class ClientForgeEvents {
                     }
                 }
             }
-            System.out.println("=== 调试结束 ===\n");
+//            System.out.println("=== 调试结束 ===\n");
         });
     }
 }

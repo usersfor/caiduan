@@ -14,11 +14,11 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import org.jetbrains.annotations.Nullable;
+
 
 public class ForgingTableBlock extends Block {
 
-    private static final Text TITLE = Text.translatable("container.template-mod.forging");
+    private static final Text TITLE = Text.literal("");
 
     public ForgingTableBlock(Settings settings) {
         super(settings);
@@ -32,7 +32,8 @@ public class ForgingTableBlock extends Block {
             serverPlayer.openHandledScreen(new ExtendedScreenHandlerFactory() {
                 @Override
                 public void writeScreenOpeningData(ServerPlayerEntity player, PacketByteBuf buf) {
-                    buf.writeBlockPos(pos);          // 1️⃣ 写坐标
+                    buf.writeBlockPos(pos);                                // 坐标
+
                 }
 
                 @Override

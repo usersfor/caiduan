@@ -4,6 +4,8 @@ import com.example.util.LevelUtil;
 import com.example.util.RemoveUtil;
 import com.example.util.TetraUtil;
 import com.example.util.TicUtil;
+import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.entity.EquipmentSlot;
@@ -30,70 +32,6 @@ public class ForgingScreen extends HandledScreen<ForgingScreenHandler> {
             0xFF66CCFF, // 云巡 - 云朵蓝
             0xFFFF3300  // 天衡 - 临界红
     };
-
-    // 武器权重矩阵 - 简化版本，只保留必要的权重
-    private static final float[][] WEAPON_WEIGHTS = {
-            // 潮律：生命 - 完全由玩家的最大生命值决定
-            {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
-            // 星痕：攻击 - 完全由武器的攻击力决定
-            {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
-            // 山屹：防御 - 完全由玩家的实体范围决定
-            {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
-            // 月映：魔法 - 完全由玩家的魔法强度
-            {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
-            // 云巡：移动速度 - 完全由玩家的移速决定
-            {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
-            // 天衡：强化等级 - 完全由装备的强化等级决定
-            {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f}
-    };
-
-    // 护甲权重矩阵 - 简化版本，只保留必要的权重
-    private static final float[][] ARMOR_WEIGHTS = {
-            // 潮律：生命 - 完全由玩家的最大生命值决定
-            {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
-            // 星痕：攻击 - 完全由玩家的方块范围决定
-            {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
-            // 山屹：防御 - 完全由装备的护甲和护甲韧性决定
-            {0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f},
-            // 月映：魔法 - 完全由玩家的魔法强度决定
-            {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
-            // 云巡：移动速度 - 完全由玩家的移速决定
-            {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
-            // 天衡：强化等级 - 完全由装备的强化等级决定
-            {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f}
-    };
-
-    // 获取装备权重 - 与权重矩阵保持一致
-    private float getEquipmentWeight(int talentIndex, boolean isWeapon) {
-        if (isWeapon) {
-            switch (talentIndex) {
-                case 0: // 潮律：生命 - 完全由玩家的最大生命值决定
-                case 2: // 山屹：防御 - 完全由玩家的实体范围决定
-                case 3: // 月映：魔法 - 完全由玩家的魔法强度
-                case 4: // 云巡：移动速度 - 完全由玩家的移速决定
-                    return 0.0f;
-                case 1: // 星痕：攻击 - 完全由武器的攻击力决定
-                case 5: // 天衡：强化等级 - 完全由装备的强化等级决定
-                    return 1.0f;
-                default:
-                    return 0.5f;
-            }
-        } else {
-            // 护甲
-            switch (talentIndex) {
-                case 0: // 潮律：生命 - 完全由玩家的最大生命值决定
-                case 1: // 星痕：攻击 - 完全由玩家的方块范围决定
-                case 3: // 月映：魔法 - 完全由玩家的魔法强度决定
-                case 4: // 云巡：移动速度 - 完全由玩家的移速决定
-                    return 0.0f;
-                case 2: // 山屹：防御 - 完全由装备的护甲和护甲韧性决定
-                case 5: // 天衡：强化等级 - 完全由装备的强化等级决定
-                    return 1.0f;
-                default:
-                    return 0.5f;
-            }
-        }
-    }
 
     // 雷达图渲染器
     private RadarChartRenderer radarChart;
@@ -138,7 +76,20 @@ public class ForgingScreen extends HandledScreen<ForgingScreenHandler> {
         this.drawMouseoverTooltip(context, mouseX, mouseY);
     }
 
-    // 获取玩家所有属性值 - 修复月映计算
+    //输出日志在聊天栏
+    private static boolean CHAT_LOGGED = false;   // 只打印一次
+    private void sayInChat(String text) {
+        if (CHAT_LOGGED) return;          // 已经说过就跳过
+        CHAT_LOGGED = true;
+        // 1.20.1 必须用渲染线程调 addMessage
+        RenderSystem.recordRenderCall(() ->
+                MinecraftClient.getInstance().inGameHud.getChatHud()
+                        .addMessage(Text.literal("§e[锻造血统]§r " + text))
+
+        );
+    }
+
+    // 获取玩家所有属性值 - 统一公式版本
     private float[] getPlayerAttributeValues() {
         float[] playerAttrs = new float[6];
         var player = this.client.player;
@@ -148,19 +99,11 @@ public class ForgingScreen extends HandledScreen<ForgingScreenHandler> {
         float maxHealth = maxHealthAttr != null ? (float) maxHealthAttr.getValue() : 20f;
         playerAttrs[0] = Math.min(maxHealth / 100f, 1f);
 
-        // 1. 星痕 - 攻击相关（伤害+攻速）
-        var attackDamageAttr = player.getAttributeInstance(EntityAttributes.GENERIC_ATTACK_DAMAGE);
-        var attackSpeedAttr = player.getAttributeInstance(EntityAttributes.GENERIC_ATTACK_SPEED);
-        float attackDamage = attackDamageAttr != null ? (float) attackDamageAttr.getBaseValue() : 1f;
-        float attackSpeed = attackSpeedAttr != null ? (float) attackSpeedAttr.getValue() : 1.0f;
-        playerAttrs[1] = Math.min(Math.max(attackDamage / 20f, attackSpeed / 4f), 1f);
+        // 1. 星痕 - 攻击相关（伤害+攻速）- 玩家部分设为0，完全由装备决定
+        playerAttrs[1] = 0f;
 
-        // 2. 山屹 - 防御相关（护甲+韧性）
-        var armorAttr = player.getAttributeInstance(EntityAttributes.GENERIC_ARMOR);
-        var toughnessAttr = player.getAttributeInstance(EntityAttributes.GENERIC_ARMOR_TOUGHNESS);
-        float armorValue = armorAttr != null ? (float) armorAttr.getValue() : 0f;
-        float toughnessValue = toughnessAttr != null ? (float) toughnessAttr.getValue() : 0f;
-        playerAttrs[2] = Math.min((armorValue + toughnessValue) / 30f, 1f);
+        // 2. 山屹 - 防御相关 - 玩家部分设为0，完全由装备决定
+        playerAttrs[2] = 0f;
 
         // 3. 月映 - 魔法强度（修复经验等级计算）
         float magicPower = 0f;
@@ -173,10 +116,8 @@ public class ForgingScreen extends HandledScreen<ForgingScreenHandler> {
                 var spellPowerAttr = Registries.ATTRIBUTE.get(attrId);
 
                 if (spellPowerAttr != null) {
-                    // 确保属性实例存在，如果不存在则创建
                     var attrInstance = player.getAttributeInstance(spellPowerAttr);
                     if (attrInstance == null) {
-                        // 尝试获取或创建属性实例
                         attrInstance = player.getAttributes().getCustomInstance(spellPowerAttr);
                     }
 
@@ -193,7 +134,6 @@ public class ForgingScreen extends HandledScreen<ForgingScreenHandler> {
         // 如果没有找到魔法模组属性，使用经验等级
         if (!hasMagicMod || magicPower == 0) {
             magicPower = player.experienceLevel;
-            System.out.println("使用经验等级作为魔法强度: " + magicPower);
         }
 
         playerAttrs[3] = Math.min(magicPower / 100f, 1f);
@@ -201,63 +141,98 @@ public class ForgingScreen extends HandledScreen<ForgingScreenHandler> {
         // 4. 云巡 - 移动速度，初始值设为10%
         var movementSpeedAttr = player.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED);
         float movementSpeed = movementSpeedAttr != null ? (float) movementSpeedAttr.getValue() : 0.1f;
-        // 设置基础值为10%，即使没有额外加成也能显示
         playerAttrs[4] = 0.1f + Math.min((movementSpeed - 0.1f) / 0.3f, 0.9f);
 
         // 5. 天衡 - 强化等级（玩家无基础强化，为0）
         playerAttrs[5] = 0f;
 
-        // 调试输出玩家属性
-        System.out.println("=== 玩家属性调试 ===");
-        System.out.println("经验等级: " + player.experienceLevel);
-        System.out.println("魔法强度: " + magicPower);
-        System.out.println("月映属性: " + playerAttrs[3]);
-        System.out.println("移动速度: " + movementSpeed);
-        System.out.println("云巡属性: " + playerAttrs[4]);
-        System.out.println("玩家属性数组: " + Arrays.toString(playerAttrs));
-
+        sayInChat(
+                String.format(
+                        "潮律-HP: %.2f | 星痕-攻: %.2f | 山屹-防: %.2f | 月映-魔: %.2f | 云巡-速: %.2f | 天衡-强: %.2f\n" +
+                                "原始值→ 生命: %.1f 移速: %.3f 经验: %d 魔法: %.1f",
+                        playerAttrs[0], playerAttrs[1], playerAttrs[2], playerAttrs[3], playerAttrs[4], playerAttrs[5],
+                        maxHealth, movementSpeed, player.experienceLevel, magicPower
+                )
+        );
         return playerAttrs;
     }
 
-    // 获取武器攻击速度
+    // 获取武器基础攻击速度（原版默认值）
+    private float getBaseWeaponAttackSpeed(ItemStack stack) {
+        var item = stack.getItem();
+        if (item instanceof net.minecraft.item.SwordItem) return 1.6f;
+        if (item instanceof net.minecraft.item.AxeItem) return 1.0f;
+        if (item instanceof net.minecraft.item.TridentItem) return 1.1f;
+        if (item instanceof net.minecraft.item.PickaxeItem) return 1.2f;
+        if (item instanceof net.minecraft.item.ShovelItem) return 1.0f;
+        if (item instanceof net.minecraft.item.HoeItem) return 1.0f;
+        return 1.4f; // 默认值
+    }
+
+    // 获取武器实际攻击速度（包含所有修饰符）
     private float getWeaponAttackSpeed(ItemStack stack) {
         var modifiers = stack.getAttributeModifiers(EquipmentSlot.MAINHAND);
         for (var modifier : modifiers.get(EntityAttributes.GENERIC_ATTACK_SPEED)) {
             return (float) modifier.getValue();
         }
-
-        var item = stack.getItem();
-        if (item instanceof net.minecraft.item.SwordItem) return 1.6f;
-        if (item instanceof net.minecraft.item.AxeItem) return 1.0f;
-        if (item instanceof net.minecraft.item.TridentItem) return 1.1f;
-        return 1.4f;
+        return getBaseWeaponAttackSpeed(stack);
     }
 
-    // 结合玩家属性的复合属性计算
-    private float[] calculateCompositeValuesWithPlayerAttributes(float[] baseValues, float[] playerAttributes, float[][] weights, boolean isWeapon) {
-        float[] composite = new float[6];
+    // 获取武器攻速加成（只计算超出基础值的部分）
+    private float getWeaponAttackSpeedBonus(ItemStack stack) {
+        float baseSpeed = getBaseWeaponAttackSpeed(stack);
+        float actualSpeed = getWeaponAttackSpeed(stack);
+        return Math.max(0, actualSpeed - baseSpeed);
+    }
 
-        for (int i = 0; i < 6; i++) {
-            float equipmentContribution = 0f;
+    // 统一计算装备的基础属性
+    private float[] calculateEquipmentBaseValues(ItemStack stack, int forgeLevel) {
+        float[] baseValues = new float[6];
+        var nbt = stack.getNbt();
+        if (nbt == null) return baseValues;
 
-            // 计算装备贡献
-            for (int j = 0; j < 6; j++) {
-                equipmentContribution += baseValues[j] * weights[i][j];
-            }
+        try {
+            // 获取基础属性
+            double baseDamage = RemoveUtil.getTrueBaseDamage(stack);
+            double currentDamage = baseDamage * LevelUtil.getBonusMultiplier(forgeLevel);
+            float attackValue = (float) currentDamage;
 
-            // 获取对应的玩家属性贡献
-            float playerContribution = playerAttributes[i];
+            // 只计算超出基础值的攻速加成
+            float attackSpeedBonus = getWeaponAttackSpeedBonus(stack);
 
-            // 根据复合元素类型调整权重
-            float equipmentWeight = getEquipmentWeight(i, isWeapon);
-            float playerWeight = 1f - equipmentWeight;
+            double baseArmor = RemoveUtil.getCleanBaseArmor(stack);
+            double currentArmor = baseArmor * LevelUtil.getBonusMultiplier(forgeLevel);
+            float armorValue = (float) currentArmor;
 
-            // 合并贡献
-            composite[i] = equipmentContribution * equipmentWeight + playerContribution * playerWeight;
-            composite[i] = Math.min(Math.max(composite[i], 0f), 1f);
+            double baseToughness = RemoveUtil.getCleanBaseToughness(stack);
+            double currentToughness = baseToughness * LevelUtil.getBonusMultiplier(forgeLevel);
+            float toughnessValue = (float) currentToughness;
+
+            // 统一计算公式
+            // 潮律：100% 玩家最大生命值（装备部分为0）
+            baseValues[0] = 0f;
+
+            // 星痕：100% 装备（基础攻击力和韧性取最大值）
+            baseValues[1] = mapAttributeToRadar(Math.max(attackValue, toughnessValue), 5000f);
+
+            // 山屹：100% 装备（护甲值和攻速加成取最大值）
+            baseValues[2] = mapAttributeToRadar(Math.max(armorValue, attackSpeedBonus), 500f);
+
+            // 月映：100% 装备（魔法属性或经验等级）- 使用玩家属性中的月映值
+            float[] playerAttrs = getPlayerAttributeValues();
+            baseValues[3] = playerAttrs[3]; // 直接使用玩家属性中的月映值
+
+            // 云巡：100% 玩家移动速度（装备部分为0）
+            baseValues[4] = 0f;
+
+            // 天衡：100% 装备强化等级
+            baseValues[5] = Math.min(forgeLevel * 0.1f, 1.0f);
+
+        } catch (Exception e) {
+            Arrays.fill(baseValues, 0f);
         }
 
-        return composite;
+        return baseValues;
     }
 
     @Override
@@ -284,9 +259,9 @@ public class ForgingScreen extends HandledScreen<ForgingScreenHandler> {
                     startY + backgroundHeight - 5
             );
 
-            // 使用动画值而不是直接设置
             float[] currentValues = getDynamicTalentValues();
             if (currentValues != null) {
+                System.out.println("【雷达图输入值】：" + java.util.Arrays.toString(currentValues));
                 radarChart.setValues(currentValues);
             } else {
                 radarChart.setValues(new float[6]);
@@ -313,14 +288,23 @@ public class ForgingScreen extends HandledScreen<ForgingScreenHandler> {
         }
     }
 
+    private boolean hasPrintedPlayerDebug = false;
     private float[] getDynamicTalentValues() {
+        ItemStack inputStack = handler.getSlot(0).getStack();
         ItemStack resultStack = handler.getSlot(3).getStack();
-        if (!resultStack.isEmpty()) {
-            return calculateTalentValues(resultStack);
+
+        ItemStack targetStack = !resultStack.isEmpty() ? resultStack : !inputStack.isEmpty() ? inputStack : ItemStack.EMPTY;
+
+        // ✅ 检测到"放入物品"的瞬间
+        if (!targetStack.isEmpty() && !hasPrintedPlayerDebug) {
+            hasPrintedPlayerDebug = true; // 只允许打印一次
+        } else if (targetStack.isEmpty()) {
+            hasPrintedPlayerDebug = false; // 物品被拿走，重置标记
         }
 
-        ItemStack inputStack = handler.getSlot(0).getStack();
-        if (!inputStack.isEmpty()) {
+        if (!resultStack.isEmpty()) {
+            return calculateTalentValues(resultStack);
+        } else if (!inputStack.isEmpty()) {
             return calculateTalentValues(inputStack);
         }
 
@@ -349,88 +333,37 @@ public class ForgingScreen extends HandledScreen<ForgingScreenHandler> {
         // 获取玩家属性值
         float[] playerAttributes = getPlayerAttributeValues();
 
-        // 原版物品计算逻辑
-        float[] baseValues = new float[6];
-        float[] compositeValues = new float[6];
-
         if (stack.isEmpty() || nbt == null) {
-            return compositeValues;
+            return new float[6];
         }
 
         int forgeLevel = nbt.getInt("forge_level");
-        int maxDurability = stack.getMaxDamage();
-        int currentDurability = maxDurability - stack.getDamage();
 
-        if (handler.isWeapon(stack)) {
-            // 武器基础属性计算 - 严格对应
-            try {
-                double baseDamage = RemoveUtil.getTrueBaseDamage(stack);
-                double currentDamage = baseDamage * LevelUtil.getBonusMultiplier(forgeLevel);
-                baseValues[0] = mapAttributeToRadar((float) currentDamage, 9999f); // 攻击力
-            } catch (Exception e) {
-                baseValues[0] = 0f;
-            }
+        // 使用统一公式计算装备基础值
+        float[] equipmentValues = calculateEquipmentBaseValues(stack, forgeLevel);
 
-            try {
-                float attackSpeed = getWeaponAttackSpeed(stack);
-                baseValues[3] = mapAttributeToRadar(attackSpeed, 9999f); // 攻速
-            } catch (Exception e) {
-                baseValues[3] = 0f;
-            }
+        // 组合最终值（根据统一公式）
+        float[] finalValues = new float[6];
 
-            // 潮律：强化等级
-            baseValues[5] = Math.min(forgeLevel * 0.1f, 1.0f);
+        // 潮律：100% 玩家最大生命值
+        finalValues[0] = playerAttributes[0];
 
-            // 使用武器权重计算复合属性
-            compositeValues = calculateCompositeValuesWithPlayerAttributes(baseValues, playerAttributes, WEAPON_WEIGHTS, true);
+        // 星痕：100% 装备（基础攻击力和韧性取最大值）
+        finalValues[1] = equipmentValues[1];
 
-        } else if (handler.isArmor(stack)) {
-            // 护甲基础属性计算 - 严格对应
-            try {
-                double baseArmor = RemoveUtil.getCleanBaseArmor(stack);
-                double currentArmor = baseArmor * LevelUtil.getBonusMultiplier(forgeLevel);
-                baseValues[1] = mapAttributeToRadar((float) currentArmor, 999f); // 护甲值
-            } catch (Exception e) {
-                baseValues[1] = 0f;
-            }
+        // 山屹：100% 装备（护甲值和攻速加成取最大值）
+        finalValues[2] = equipmentValues[2];
 
-            try {
-                double baseToughness = RemoveUtil.getCleanBaseToughness(stack);
-                double currentToughness = baseToughness * LevelUtil.getBonusMultiplier(forgeLevel);
-                baseValues[2] = mapAttributeToRadar((float) currentToughness, 999f); // 护甲韧性
-            } catch (Exception e) {
-                baseValues[2] = 0f;
-            }
+        // 月映：100% 装备（魔法属性或经验等级）
+        finalValues[3] = equipmentValues[3];
 
-            // 云巡：生命值（从护甲属性获取）
-            try {
-                var modifiers = stack.getAttributeModifiers(EquipmentSlot.CHEST);
-                for (var modifier : modifiers.get(EntityAttributes.GENERIC_MAX_HEALTH)) {
-                    float healthBonus = (float) modifier.getValue();
-                    baseValues[4] = mapAttributeToRadar(healthBonus, 999f);
-                    break;
-                }
-            } catch (Exception e) {
-                baseValues[4] = 0f;
-            }
+        // 云巡：100% 玩家移动速度
+        finalValues[4] = playerAttributes[4];
 
-            // 潮律：强化等级
-            baseValues[5] = Math.min(forgeLevel * 0.1f, 1.0f);
+        // 天衡：100% 装备强化等级
+        finalValues[5] = equipmentValues[5];
 
-            // 使用护甲权重计算复合属性
-            compositeValues = calculateCompositeValuesWithPlayerAttributes(baseValues, playerAttributes, ARMOR_WEIGHTS, false);
-        }
-
-        // 添加调试输出
-        System.out.println("=== 属性计算调试 ===");
-        System.out.println("物品: " + stack.getName().getString());
-        System.out.println("是否武器: " + handler.isWeapon(stack));
-        System.out.println("强化等级: " + forgeLevel);
-        System.out.println("玩家属性: " + Arrays.toString(playerAttributes));
-        System.out.println("基础值: " + Arrays.toString(baseValues));
-        System.out.println("复合值: " + Arrays.toString(compositeValues));
-
-        return compositeValues;
+        return finalValues;
     }
 
     private void drawItemStats(DrawContext context, int startX, int startY) {

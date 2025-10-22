@@ -35,6 +35,13 @@ public class ForgingScreenHandler extends ScreenHandler {
     private static final int SLOT_MAT2   = 2;
     private static final int SLOT_RESULT = 3;
 
+    // 玩家属性存储
+    private float tidalRate = 0.0f;    // 潮律
+    private float starMark = 0.0f;     // 星痕
+    private float mountainStand = 0.0f; // 山屹
+    private float moonReflection = 0.0f; // 月映
+    private float cloudRoam = 0.0f;    // 云巡
+    private float skyBalance = 0.0f;   // 天衡
 
     // 特殊材料的基础加成和衰减率 - 使用您的强化率数据
     private static final Map<Item, IronUtil.MaterialData> SPECIAL_MATERIAL_DATA = new HashMap<>();
@@ -97,24 +104,49 @@ public class ForgingScreenHandler extends ScreenHandler {
                                 ScreenHandlerContext context) {
         super(TemplateMod.FORGING_SCREEN_HANDLER, syncId);
 
-        addSlot(new Slot(inv, SLOT_INPUT, 27, 35) {
+        addSlot(new Slot(inv, SLOT_INPUT,  220,  10){
             @Override public boolean canInsert(ItemStack stack) {
                 return isWeapon(stack) || isArmor(stack);
             }
         });
-        addSlot(new Slot(inv, SLOT_MAT1, 65, 17) {
-            @Override public boolean canInsert(ItemStack stack) {
+        // 在 ForgingScreenHandler.java 中修改材料槽位
+
+        addSlot(new Slot(inv, SLOT_MAT1, 220, 40) {
+            @Override
+            public boolean canInsert(ItemStack stack) {
                 // 统一材料槽位 - 允许所有有效材料
-                return isValidMaterial(stack);
+                return isValidMaterial(stack) && this.getStack().isEmpty(); // 只能放入空槽位
+            }
+
+            @Override
+            public int getMaxItemCount() {
+                return 1; // 限制最大堆叠数为1
+            }
+
+            @Override
+            public int getMaxItemCount(ItemStack stack) {
+                return 1; // 限制最大堆叠数为1
             }
         });
-        addSlot(new Slot(inv, SLOT_MAT2, 93, 17) {
-            @Override public boolean canInsert(ItemStack stack) {
+
+        addSlot(new Slot(inv, SLOT_MAT2, 220, 70) {
+            @Override
+            public boolean canInsert(ItemStack stack) {
                 // 统一材料槽位 - 允许所有有效材料
-                return isValidMaterial(stack);
+                return isValidMaterial(stack) && this.getStack().isEmpty(); // 只能放入空槽位
+            }
+
+            @Override
+            public int getMaxItemCount() {
+                return 1; // 限制最大堆叠数为1
+            }
+
+            @Override
+            public int getMaxItemCount(ItemStack stack) {
+                return 1; // 限制最大堆叠数为1
             }
         });
-        addSlot(new Slot(inv, SLOT_RESULT, 151, 35) {
+        addSlot(new Slot(inv, SLOT_RESULT, 220, 100) {
             @Override public boolean canInsert(ItemStack stack) { return false; }
             @Override public void onTakeItem(PlayerEntity player, ItemStack stack) {
                 inv.setStack(SLOT_RESULT, ItemStack.EMPTY);
@@ -144,6 +176,43 @@ public class ForgingScreenHandler extends ScreenHandler {
                                                     PacketByteBuf buf) {
         return new ForgingScreenHandler(syncId, inv,
                 ScreenHandlerContext.create(inv.player.getWorld(), buf.readBlockPos()));
+    }
+
+    /* ============================== 玩家属性相关 ============================== */
+
+    // 设置玩家属性（应该在打开界面时调用）
+    public void setPlayerAttributes(float tidalRate, float starMark, float mountainStand,
+                                    float moonReflection, float cloudRoam, float skyBalance) {
+        this.tidalRate = tidalRate;
+        this.starMark = starMark;
+        this.mountainStand = mountainStand;
+        this.moonReflection = moonReflection;
+        this.cloudRoam = cloudRoam;
+        this.skyBalance = skyBalance;
+    }
+
+    // 获取山屹提供的失败保护次数
+    private int getMountainStandProtectionCount() {
+        int protectionCount = (int) (mountainStand / 0.2f);
+        return Math.min(protectionCount, 5); // 最多5次
+    }
+
+    // 获取潮律提供的跳级概率
+    private float getTidalRateJumpChance() {
+        return (tidalRate / 0.2f) * 0.001f; // 每0.2潮律增加0.1%跳级概率
+    }
+
+    // 获取月映提供的成功率加成
+    private float getMoonReflectionSuccessBonus() {
+        return moonReflection * 0.01f; // 月映越高，成功率加成越高
+    }
+
+    // 获取天衡提供的材料收益平衡
+    private float getSkyBalanceMaterialBonus(float baseMaterialBonus) {
+        if (baseMaterialBonus < 0.05f) { // 如果材料收益过低
+            return baseMaterialBonus + (skyBalance / 0.2f) * 0.01f; // 每0.2天衡增强平衡加的数值
+        }
+        return baseMaterialBonus;
     }
 
     /* ============================== 工具 ============================== */
@@ -271,43 +340,71 @@ public class ForgingScreenHandler extends ScreenHandler {
         consumeMaterials(materialCounts);
 
         float chance = getCurrentChance(input, materialCounts);
+
+        // 应用月映成功率加成
+        chance += getMoonReflectionSuccessBonus();
+
         boolean success = player.getRandom().nextFloat() < chance;
 
-        // 其余失败处理逻辑保持不变...
+        // 检查山屹保护
+        boolean usedProtection = false;
+        int protectionCount = getMountainStandProtectionCount();
+
         if (success) {
             NbtCompound tag = input.getOrCreateNbt();
             int newLevel = tag.getInt("forge_level") + 1;
+
+            // 检查潮律跳级
+            float jumpChance = getTidalRateJumpChance();
+            if (player.getRandom().nextFloat() < jumpChance && newLevel < 99) {
+                newLevel += 1;
+                player.sendMessage(Text.literal("潮律之力！强化跳级！当前等级: " + newLevel), false);
+            }
+
             tag.putInt("forge_level", newLevel);
 
             // ✅ 新增：写入基础值到 NBT，供客户端直接读取
             RemoveUtil.writeBaseValuesToNbt(input);
 
+            // 应用星痕强化收益加成（传入player.getRandom()）
+            AddUtil.applyStarMarkBonus(input, starMark, isWeapon(input), player.getRandom());
+
+            // 应用云巡药水效果
+            AddUtil.applyCloudRoamEffects(input, cloudRoam);
+
             AddUtil.applyForgingBonus(input);  // 只追加 AttributeModifier
             player.sendMessage(Text.literal("强化成功！当前等级: " + newLevel), false);
-        } else {
+        } else{
             NbtCompound tag = input.getOrCreateNbt();
             int currentLevel = tag.getInt("forge_level");
 
-            // 根据当前等级决定失败惩罚
-            if (currentLevel >= 15) {
-                // +15 以上失败直接清除武器
-                inv.setStack(SLOT_INPUT, ItemStack.EMPTY);
-                player.sendMessage(Text.literal("强化失败！武器已损毁！"), false);
-            } else if (currentLevel >= 12) {
-                // +12 开始失败不掉落但掉 3 级
-                int newLevel = Math.max(0, currentLevel - 3); // 确保等级不低于0
-                tag.putInt("forge_level", newLevel);
-
-                // 重新应用属性修饰符以反映等级下降
-                AddUtil.applyForgingBonus(input);
-                player.sendMessage(Text.literal("强化失败！武器等级下降了3级！当前等级: " + newLevel), false);
-
-                // 更新物品栈以触发客户端同步
-                inv.setStack(SLOT_INPUT, input);
+            // 检查山屹保护
+            if (protectionCount > 0) {
+                usedProtection = true;
+                player.sendMessage(Text.literal("山屹之力保护了你的装备！"), false);
+                // 不执行任何惩罚，只是强化失败
             } else {
-                // 12级以下失败清除武器（原逻辑）
-                inv.setStack(SLOT_INPUT, ItemStack.EMPTY);
-                player.sendMessage(Text.literal("强化失败！"), false);
+                // 根据当前等级决定失败惩罚
+                if (currentLevel >= 15) {
+                    // +15 以上失败直接清除武器
+                    inv.setStack(SLOT_INPUT, ItemStack.EMPTY);
+                    player.sendMessage(Text.literal("强化失败！武器已损毁！"), false);
+                } else if (currentLevel >= 12) {
+                    // +12 开始失败不掉落但掉 3 级
+                    int newLevel = Math.max(0, currentLevel - 3); // 确保等级不低于0
+                    tag.putInt("forge_level", newLevel);
+
+                    // 重新应用属性修饰符以反映等级下降
+                    AddUtil.applyForgingBonus(input);
+                    player.sendMessage(Text.literal("强化失败！武器等级下降了3级！当前等级: " + newLevel), false);
+
+                    // 更新物品栈以触发客户端同步
+                    inv.setStack(SLOT_INPUT, input);
+                } else {
+                    // 12级以下失败清除武器（原逻辑）
+                    inv.setStack(SLOT_INPUT, ItemStack.EMPTY);
+                    player.sendMessage(Text.literal("强化失败！"), false);
+                }
             }
         }
         updateResult();
@@ -357,17 +454,16 @@ public class ForgingScreenHandler extends ScreenHandler {
             Item item = entry.getKey();
             int count = entry.getValue();
             IronUtil.MaterialData data = getMaterialData(item);
-            totalBonus += calculateMaterialBonus(count, data.baseBonus, data.decayRate);
+
+            // 应用天衡材料收益平衡
+            float materialBonus = calculateMaterialBonus(count, data.baseBonus, data.decayRate);
+            materialBonus = getSkyBalanceMaterialBonus(materialBonus);
+
+            totalBonus += materialBonus;
         }
 
         return base + totalBonus;
     }
-
-
-
-
-
-
 
     /* ============================== 必要覆写 ============================== */
     @Override public void onClosed(PlayerEntity player) {
@@ -396,9 +492,21 @@ public class ForgingScreenHandler extends ScreenHandler {
                 if (!insertItem(stack, SLOT_INPUT, SLOT_INPUT + 1, false))
                     return ItemStack.EMPTY;
             } else if (isValidMaterial(stack)) {
-                // 尝试放入材料槽
-                if (!insertItem(stack, SLOT_MAT1, SLOT_MAT2 + 1, false))
+                // 尝试放入材料槽，但只能放入空槽位
+                boolean inserted = false;
+                if (inv.getStack(SLOT_MAT1).isEmpty()) {
+                    if (insertItem(stack, SLOT_MAT1, SLOT_MAT1 + 1, false)) {
+                        inserted = true;
+                    }
+                }
+                if (!inserted && inv.getStack(SLOT_MAT2).isEmpty()) {
+                    if (insertItem(stack, SLOT_MAT2, SLOT_MAT2 + 1, false)) {
+                        inserted = true;
+                    }
+                }
+                if (!inserted) {
                     return ItemStack.EMPTY;
+                }
             } else return ItemStack.EMPTY;
         } else if (!insertItem(stack, 4, 40, true)) return ItemStack.EMPTY;
 

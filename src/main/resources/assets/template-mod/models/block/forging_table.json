@@ -1,9 +1,6 @@
 {
-  "parent": "minecraft:block/orientable",
-  "textures": {
-    "top": "template-mod:block/forging_table_top",
-    "bottom": "template-mod:block/forging_table_bottom",
-    "front": "template-mod:block/forging_table_side",
-    "side": "template-mod:block/forging_table_side"
-  }
+	"parent": "minecraft:block/cube_all",
+	"textures": {
+		"all": "template-mod:block/forging_table"   
+	}
 }

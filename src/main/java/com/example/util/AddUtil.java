@@ -5,7 +5,7 @@ import net.minecraft.entity.attribute.EntityAttributeModifier;
 import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
-
+import net.minecraft.util.math.random.Random; // 使用 Minecraft 的 Random
 
 import java.util.UUID;
 
@@ -72,6 +72,40 @@ public final class AddUtil {
                     new EntityAttributeModifier(KB_RES_BONUS_UUID, "forge_bonus",
                             kbResBonus, EntityAttributeModifier.Operation.ADDITION),
                     slot);
+        }
+    }
+
+    // 应用星痕强化收益加成
+    public static void applyStarMarkBonus(ItemStack stack, float starMark, boolean isWeapon, Random random) {
+        NbtCompound tag = stack.getOrCreateNbt();
+
+        if (isWeapon) {
+            // 武器：增加攻击力
+            double baseDamage = RemoveUtil.getTrueBaseDamage(stack);
+            double starBonus = baseDamage * (starMark * 0.01); // 1星痕 = 1%基础攻击力
+            tag.putDouble("star_mark_bonus_damage", starBonus);
+        } else {
+            // 护甲：随机选择护甲值或护甲韧性
+            if (random.nextBoolean()) {
+                // 增加护甲值
+                double baseArmor = RemoveUtil.getCleanBaseArmor(stack);
+                double armorBonus = baseArmor * (starMark * 0.01);
+                tag.putDouble("star_mark_bonus_armor", armorBonus);
+            } else {
+                // 增加护甲韧性
+                double baseToughness = RemoveUtil.getCleanBaseToughness(stack);
+                double toughnessBonus = baseToughness * (starMark * 0.01);
+                tag.putDouble("star_mark_bonus_toughness", toughnessBonus);
+            }
+        }
+    }
+
+    // 应用云巡药水效果
+    public static void applyCloudRoamEffects(ItemStack stack, float cloudRoam) {
+        if (cloudRoam >= 0.5f) {
+            NbtCompound tag = stack.getOrCreateNbt();
+            int effectLevel = (int) ((cloudRoam - 0.5f) / 0.1f) + 1; // 每0.1云巡增加1级
+            tag.putInt("cloud_roam_effect_level", Math.min(effectLevel, 5)); // 最大5级
         }
     }
 

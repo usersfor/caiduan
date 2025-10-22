@@ -31,6 +31,7 @@ public class ModTabs {
         ItemGroupEvents.modifyEntriesEvent(FORGE_TAB_KEY).register(entries -> {
             entries.add(ModItems.SWORD_UPGRADE_TEMPLATE);
             entries.add(ModItems.ARMOR_UPGRADE_TEMPLATE);
+            entries.add(ModItems.FORGING_TABLE_ITEM);
         });
     }
 }
