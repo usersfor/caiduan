@@ -6,22 +6,22 @@ public class TicUtil {
 
     // TiC 工具属性权重配置（更新为新的复合元素顺序）
     private static final float[][] WEAPON_WEIGHTS = {
-            {0.0f, 0.0f, 0.0f, 0.0f, 0.3f, 0.3f}, // 山屹权重
-            {0.6f, 0.0f, 0.0f, 0.0f, 0.2f, 0.0f}, // 星痕权重
-            {0.0f, 0.0f, 0.0f, 0.8f, 0.0f, 0.0f}, // 风缘权重
-            {0.33f, 0.0f, 0.0f, 0.0f, 0.33f, 0.33f}, // 命脉权重
-            {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}, // 潮律权重
-            {0.0f, 0.0f, 0.0f, 0.0f, 0.4f, 0.4f}  // 劫生权重
+            {0.0f, 0.0f, 0.0f, 0.0f, 0.3f, 0.3f}, // 土权重
+            {0.6f, 0.0f, 0.0f, 0.0f, 0.2f, 0.0f}, // 金权重
+            {0.0f, 0.0f, 0.0f, 0.8f, 0.0f, 0.0f}, // 木权重
+            {0.33f, 0.0f, 0.0f, 0.0f, 0.33f, 0.33f}, // 火权重
+            {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}, // 水权重
+            {0.0f, 0.0f, 0.0f, 0.0f, 0.4f, 0.4f}  // 星权重
     };
 
     // TiC 护甲属性权重配置（更新为新的复合元素顺序）
     private static final float[][] ARMOR_WEIGHTS = {
-            {0.3f, 0.2f, 0.0f, 0.0f, 0.1f, 0.2f}, // 山屹权重 - 精准度、投射物伤害
-            {0.2f, 0.4f, 0.0f, 0.0f, 0.1f, 0.1f}, // 星痕权重 - 攻击伤害、投射物伤害
-            {0.0f, 0.0f, 0.5f, 0.2f, 0.1f, 0.1f}, // 风缘权重 - 速度、攻击速度
-            {0.1f, 0.0f, 0.2f, 0.4f, 0.1f, 0.1f}, // 命脉权重 - 使用速度、挖掘速度
-            {0.1f, 0.1f, 0.0f, 0.0f, 0.6f, 0.2f}, // 潮律权重 - 护甲、韧性、格挡、耐久
-            {0.3f, 0.3f, 0.3f, 0.4f, 0.1f, 0.4f}  // 劫生权重 - 综合稀有度
+            {0.3f, 0.2f, 0.0f, 0.0f, 0.1f, 0.2f}, // 土权重 - 精准度、投射物伤害
+            {0.2f, 0.4f, 0.0f, 0.0f, 0.1f, 0.1f}, // 金权重 - 攻击伤害、投射物伤害
+            {0.0f, 0.0f, 0.5f, 0.2f, 0.1f, 0.1f}, // 木权重 - 速度、攻击速度
+            {0.1f, 0.0f, 0.2f, 0.4f, 0.1f, 0.1f}, // 火权重 - 使用速度、挖掘速度
+            {0.1f, 0.1f, 0.0f, 0.0f, 0.6f, 0.2f}, // 水权重 - 护甲、韧性、格挡、耐久
+            {0.3f, 0.3f, 0.3f, 0.4f, 0.1f, 0.4f}  // 星权重 - 综合稀有度
     };
 
     /**
@@ -61,7 +61,7 @@ public class TicUtil {
     private static float[] calculateArmorTalentValues(NbtCompound ticStats, float[] playerAttributes) {
         float[] baseValues = new float[6];
 
-        // 山屹 (索引0) - 精准度、特殊效果
+        // 土 (索引0) - 精准度、特殊效果
         if (ticStats.contains("tconstruct:accuracy")) {
             float accuracy = ticStats.getFloat("tconstruct:accuracy");
             baseValues[0] += Math.min(accuracy / 3.0f, 0.4f);
@@ -81,7 +81,7 @@ public class TicUtil {
         }
         baseValues[0] = Math.min(baseValues[0], 1.0f);
 
-        // 星痕 (索引1) - 攻击相关属性
+        // 金 (索引1) - 攻击相关属性
         if (ticStats.contains("tconstruct:projectile_damage")) {
             float projectileDamage = ticStats.getFloat("tconstruct:projectile_damage");
             baseValues[1] += Math.min(projectileDamage / 10.0f, 0.5f);
@@ -106,7 +106,7 @@ public class TicUtil {
         }
         baseValues[1] = Math.min(baseValues[1], 1.0f);
 
-        // 风缘 (索引2) - 速度相关
+        // 木 (索引2) - 速度相关
         float speedValue = 0f;
         if (ticStats.contains("tconstruct:attack_speed")) {
             speedValue += ticStats.getFloat("tconstruct:attack_speed") / 3.0f;
@@ -133,7 +133,7 @@ public class TicUtil {
         }
         baseValues[2] = Math.min(speedValue / 2.0f, 1.0f);
 
-        // 命脉 (索引3) - 使用速度、能量流动
+        // 火 (索引3) - 使用速度、能量流动
         if (ticStats.contains("tconstruct:draw_speed")) {
             float drawSpeed = ticStats.getFloat("tconstruct:draw_speed");
             baseValues[3] += Math.min(drawSpeed / 2.5f, 0.4f);
@@ -157,7 +157,7 @@ public class TicUtil {
         }
         baseValues[3] = Math.min(baseValues[3], 1.0f);
 
-        // 潮律 (索引4) - 防御属性
+        // 水 (索引4) - 防御属性
         if (ticStats.contains("tconstruct:armor")) {
             float armor = ticStats.getFloat("tconstruct:armor");
             baseValues[4] += Math.min(armor / 25.0f, 0.3f);
@@ -189,7 +189,7 @@ public class TicUtil {
         }
         baseValues[4] = Math.min(baseValues[4], 1.0f);
 
-        // 劫生 (索引5) - 综合稀有度
+        // 星 (索引5) - 综合稀有度
         int attributeCount = 0;
         float fateScore = 0f;
 
@@ -230,7 +230,7 @@ public class TicUtil {
     private static float[] calculateToolTalentValues(NbtCompound ticStats, float[] playerAttributes) {
         float[] baseValues = new float[6];
 
-        // 山屹 (索引0) - 精准度、特殊效果相关
+        // 土 (索引0) - 精准度、特殊效果相关
         if (ticStats.contains("tconstruct:accuracy")) {
             float accuracy = ticStats.getFloat("tconstruct:accuracy");
             baseValues[0] += Math.min(accuracy / 2.0f, 0.5f);
@@ -250,7 +250,7 @@ public class TicUtil {
         }
         baseValues[0] = Math.min(baseValues[0], 1.0f);
 
-        // 星痕 (索引1) - 攻击伤害相关
+        // 金 (索引1) - 攻击伤害相关
         if (ticStats.contains("tconstruct:attack_damage")) {
             float attackDamage = ticStats.getFloat("tconstruct:attack_damage");
             baseValues[1] = Math.min(attackDamage / 25.0f, 1.0f);
@@ -270,7 +270,7 @@ public class TicUtil {
         }
         baseValues[1] = Math.min(baseValues[1], 1.0f);
 
-        // 风缘 (索引2) - 攻击速度、移动速度相关
+        // 木 (索引2) - 攻击速度、移动速度相关
         float speedValue = 0f;
         if (ticStats.contains("tconstruct:attack_speed")) {
             speedValue += ticStats.getFloat("tconstruct:attack_speed") / 4.0f;
@@ -297,7 +297,7 @@ public class TicUtil {
         }
         baseValues[2] = Math.min(speedValue / 2.0f, 1.0f);
 
-        // 命脉 (索引3) - 使用速度、能量流动相关
+        // 火 (索引3) - 使用速度、能量流动相关
         if (ticStats.contains("tconstruct:draw_speed")) {
             float drawSpeed = ticStats.getFloat("tconstruct:draw_speed");
             baseValues[3] += Math.min(drawSpeed / 3.0f, 0.5f);
@@ -321,7 +321,7 @@ public class TicUtil {
         }
         baseValues[3] = Math.min(baseValues[3], 1.0f);
 
-        // 潮律 (索引4) - 耐久度、防御相关
+        // 水 (索引4) - 耐久度、防御相关
         if (ticStats.contains("tconstruct:durability")) {
             float durability = ticStats.getFloat("tconstruct:durability");
             baseValues[4] = Math.min(durability / 10000.0f, 1.0f);
@@ -333,7 +333,7 @@ public class TicUtil {
         }
         baseValues[4] = Math.min(baseValues[4], 1.0f);
 
-        // 劫生 (索引5) - 综合属性、稀有度相关
+        // 星 (索引5) - 综合属性、稀有度相关
         if (ticStats.contains("tconstruct:harvest_tier")) {
             String harvestTier = ticStats.getString("tconstruct:harvest_tier");
             baseValues[5] = getHarvestTierValue(harvestTier) * 0.7f;
@@ -409,17 +409,17 @@ public class TicUtil {
         if (isArmor) {
             // 护甲权重
             switch (talentIndex) {
-                case 0: // 山屹 - 护甲主导
+                case 0: // 土 - 护甲主导
                     return 0.7f;
-                case 1: // 星痕 - 玩家主导（护甲不直接贡献星痕）
+                case 1: // 金 - 玩家主导（护甲不直接贡献金）
                     return 0.3f;
-                case 2: // 风缘 - 平衡
+                case 2: // 木 - 平衡
                     return 0.5f;
-                case 3: // 命脉 - 玩家主导
+                case 3: // 火 - 玩家主导
                     return 0.3f;
-                case 4: // 潮律 - 装备主导
+                case 4: // 水 - 装备主导
                     return 0.7f;
-                case 5: // 劫生 - 玩家主导
+                case 5: // 星 - 玩家主导
                     return 0.2f;
                 default:
                     return 0.5f;
@@ -427,17 +427,17 @@ public class TicUtil {
         } else {
             // 武器权重
             switch (talentIndex) {
-                case 0: // 山屹 - 玩家主导（武器不直接贡献山屹）
+                case 0: // 土 - 玩家主导（武器不直接贡献土）
                     return 0.3f;
-                case 1: // 星痕 - 装备主导
+                case 1: // 金 - 装备主导
                     return 0.7f;
-                case 2: // 风缘 - 平衡
+                case 2: // 木 - 平衡
                     return 0.5f;
-                case 3: // 命脉 - 玩家主导
+                case 3: // 火 - 玩家主导
                     return 0.3f;
-                case 4: // 潮律 - 装备主导
+                case 4: // 水 - 装备主导
                     return 0.7f;
-                case 5: // 劫生 - 玩家主导
+                case 5: // 星 - 玩家主导
                     return 0.2f;
                 default:
                     return 0.5f;

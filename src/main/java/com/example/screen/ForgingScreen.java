@@ -22,15 +22,15 @@ import java.util.Arrays;
 public class ForgingScreen extends HandledScreen<ForgingScreenHandler> {
 
     // 新的复合属性定义 - 严格1:1对应
-    private final String[] talents = {"潮律", "星痕", "山屹", "月映", "云巡", "天衡"};
+    private final String[] talents = {"水", "金", "土", "火", "木", "星"};
     private float[] talentValues = new float[6]; // 动态数据
     private final int[] talentColors = {
-            0xFF9933FF, // 潮律 - 潮汐紫
-            0xFF3399FF, // 星痕 - 星空蓝
-            0xFF996633, // 山屹 - 大地棕
-            0xFFFFCC00, // 月映 - 月光金
-            0xFF66CCFF, // 云巡 - 云朵蓝
-            0xFFFF3300  // 天衡 - 临界红
+            0xFF0099FF, // 水 - 澈湖蓝
+            0xFFFFD700, // 金 - 耀金黄
+            0xFF8B4513, // 土 - 赭石棕
+            0xFFFF4500, // 火 - 炽焰橙
+            0xFF32CD32, // 木 - 新芽绿
+            0xFFBB44FF  // 星 - 幻紫
     };
 
     // 雷达图渲染器
@@ -94,18 +94,18 @@ public class ForgingScreen extends HandledScreen<ForgingScreenHandler> {
         float[] playerAttrs = new float[6];
         var player = this.client.player;
 
-        // 0. 潮律 - 生命值比率
+        // 0. 水 - 生命值比率
         var maxHealthAttr = player.getAttributeInstance(EntityAttributes.GENERIC_MAX_HEALTH);
         float maxHealth = maxHealthAttr != null ? (float) maxHealthAttr.getValue() : 20f;
         playerAttrs[0] = Math.min(maxHealth / 100f, 1f);
 
-        // 1. 星痕 - 攻击相关（伤害+攻速）- 玩家部分设为0，完全由装备决定
+        // 1. 金 - 攻击相关（伤害+攻速）- 玩家部分设为0，完全由装备决定
         playerAttrs[1] = 0f;
 
-        // 2. 山屹 - 防御相关 - 玩家部分设为0，完全由装备决定
+        // 2. 土 - 防御相关 - 玩家部分设为0，完全由装备决定
         playerAttrs[2] = 0f;
 
-        // 3. 月映 - 魔法强度（修复经验等级计算）
+        // 3. 火 - 魔法强度（修复经验等级计算）
         float magicPower = 0f;
         boolean hasMagicMod = false;
 
@@ -138,17 +138,17 @@ public class ForgingScreen extends HandledScreen<ForgingScreenHandler> {
 
         playerAttrs[3] = Math.min(magicPower / 100f, 1f);
 
-        // 4. 云巡 - 移动速度，初始值设为10%
+        // 4. 木 - 移动速度，初始值设为10%
         var movementSpeedAttr = player.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED);
         float movementSpeed = movementSpeedAttr != null ? (float) movementSpeedAttr.getValue() : 0.1f;
         playerAttrs[4] = 0.1f + Math.min((movementSpeed - 0.1f) / 0.3f, 0.9f);
 
-        // 5. 天衡 - 强化等级（玩家无基础强化，为0）
+        // 5. 星 - 强化等级（玩家无基础强化，为0）
         playerAttrs[5] = 0f;
 
         sayInChat(
                 String.format(
-                        "潮律-HP: %.2f | 星痕-攻: %.2f | 山屹-防: %.2f | 月映-魔: %.2f | 云巡-速: %.2f | 天衡-强: %.2f\n" +
+                        "水-HP: %.2f | 金-攻: %.2f | 土-防: %.2f | 火-魔: %.2f | 木-速: %.2f | 星-强: %.2f\n" +
                                 "原始值→ 生命: %.1f 移速: %.3f 经验: %d 魔法: %.1f",
                         playerAttrs[0], playerAttrs[1], playerAttrs[2], playerAttrs[3], playerAttrs[4], playerAttrs[5],
                         maxHealth, movementSpeed, player.experienceLevel, magicPower
@@ -209,23 +209,23 @@ public class ForgingScreen extends HandledScreen<ForgingScreenHandler> {
             float toughnessValue = (float) currentToughness;
 
             // 统一计算公式
-            // 潮律：100% 玩家最大生命值（装备部分为0）
+            // 水：100% 玩家最大生命值（装备部分为0）
             baseValues[0] = 0f;
 
-            // 星痕：100% 装备（基础攻击力和韧性取最大值）
+            // 金：100% 装备（基础攻击力和韧性取最大值）
             baseValues[1] = mapAttributeToRadar(Math.max(attackValue, toughnessValue), 5000f);
 
-            // 山屹：100% 装备（护甲值和攻速加成取最大值）
+            // 土：100% 装备（护甲值和攻速加成取最大值）
             baseValues[2] = mapAttributeToRadar(Math.max(armorValue, attackSpeedBonus), 500f);
 
-            // 月映：100% 装备（魔法属性或经验等级）- 使用玩家属性中的月映值
+            // 火：100% 装备（魔法属性或经验等级）- 使用玩家属性中的火值
             float[] playerAttrs = getPlayerAttributeValues();
-            baseValues[3] = playerAttrs[3]; // 直接使用玩家属性中的月映值
+            baseValues[3] = playerAttrs[3]; // 直接使用玩家属性中的火值
 
-            // 云巡：100% 玩家移动速度（装备部分为0）
+            // 木：100% 玩家移动速度（装备部分为0）
             baseValues[4] = 0f;
 
-            // 天衡：100% 装备强化等级
+            // 星：100% 装备强化等级
             baseValues[5] = Math.min(forgeLevel * 0.1f, 1.0f);
 
         } catch (Exception e) {
@@ -345,22 +345,22 @@ public class ForgingScreen extends HandledScreen<ForgingScreenHandler> {
         // 组合最终值（根据统一公式）
         float[] finalValues = new float[6];
 
-        // 潮律：100% 玩家最大生命值
+        // 水：100% 玩家最大生命值
         finalValues[0] = playerAttributes[0];
 
-        // 星痕：100% 装备（基础攻击力和韧性取最大值）
+        // 金：100% 装备（基础攻击力和韧性取最大值）
         finalValues[1] = equipmentValues[1];
 
-        // 山屹：100% 装备（护甲值和攻速加成取最大值）
+        // 土：100% 装备（护甲值和攻速加成取最大值）
         finalValues[2] = equipmentValues[2];
 
-        // 月映：100% 装备（魔法属性或经验等级）
+        // 火：100% 装备（魔法属性或经验等级）
         finalValues[3] = equipmentValues[3];
 
-        // 云巡：100% 玩家移动速度
+        // 木：100% 玩家移动速度
         finalValues[4] = playerAttributes[4];
 
-        // 天衡：100% 装备强化等级
+        // 星：100% 装备强化等级
         finalValues[5] = equipmentValues[5];
 
         return finalValues;
